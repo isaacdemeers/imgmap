@@ -331,6 +331,15 @@ function gui_addArea(id) {
   temp += '<option value="_blank" >new window</option>';
   temp += '<option value="_top"   >top window</option>';
   temp += "</select>";
+  temp += '<span class="spip_options" style="display:none">';
+  temp +=
+    '<input type="checkbox" name="spip_is_article_' +
+    id +
+    '" id="spip_is_article_' +
+    id +
+    '" checked="checked">';
+  temp += '<label for="spip_is_article_' + id + '">Article SPIP</label>';
+  temp += "</span>";
   props[id].innerHTML = temp;
   //hook more event handlers to individual inputs
 
@@ -469,6 +478,8 @@ function gui_htmlChanged(str) {
       document.getElementById("html_container").value = output_css();
     } else if (out == "wiki") {
       document.getElementById("html_container").value = output_wiki();
+    } else if (out == "spip") {
+      document.getElementById("html_container").value = output_spip();
     } else {
       document.getElementById("html_container").value = str;
     }
@@ -621,8 +632,24 @@ function gui_outputChanged() {
   var temp, i;
   var clipboard_enabled = window.clipboardData || typeof air == "object";
   var output = document.getElementById("dd_output").value;
-  if (output == "css") {
-    //css output selected
+
+  // Hide all SPIP elements by default
+  $(".spip_options").hide();
+  $("#spip_options").hide();
+
+  if (output == "spip") {
+    temp = "This is the generated code in SPIP 4 format. ";
+    temp += "Click in the text area below and press Ctrl+C to copy the code. ";
+    if (clipboard_enabled) {
+      temp += "You can also use the clipboard icon on the right. ";
+      temp +=
+        '<img src="example1_files/clipboard.gif" onclick="gui_toClipBoard()" style="float: right; margin: 4px; cursor: pointer;"/>';
+    }
+    // Show SPIP options
+    $(".spip_options").show();
+    $("#spip_options").show();
+  } else if (output == "css") {
+    // ...existing code for CSS...
     for (i = 0; i < myimgmap.areas.length; i++) {
       if (
         myimgmap.areas[i] &&
@@ -684,6 +711,7 @@ function gui_outputChanged() {
     temp +=
       '(<a href="http://css-tricks.com/absolute-positioning-inside-relative-positioning/">read more</a>).';
   } else if (output == "wiki") {
+    // ...existing code for wiki...
     temp =
       "This is the generated image map Wiki code to use with MediaWiki ImageMap extension. ";
     temp +=
@@ -698,6 +726,7 @@ function gui_outputChanged() {
       '(<a href="http://www.mediawiki.org/wiki/Extension:ImageMap">read more</a>).';
   } else {
     temp = "This is the generated image map HTML code. ";
+    // ...existing code for default...
     temp +=
       "Click into the textarea below and press Ctrl+C to copy the code to your clipboard. ";
     if (clipboard_enabled) {
@@ -710,7 +739,7 @@ function gui_outputChanged() {
     temp +=
       '(<a href="http://www.htmlhelp.com/reference/html40/special/map.html">read more</a>). ';
   }
-  document.getElementById("output_help").innerHTML = temp;
+  // ...rest of existing code...
   //this will reload areas and sets dropdown restrictions
   myimgmap.setMapHTML(myimgmap.getMapHTML());
   outputmode = output;
@@ -866,7 +895,7 @@ function output_wiki() {
   for (var i = 0; i < myimgmap.areas.length; i++) {
     if (myimgmap.areas[i]) {
       if (myimgmap.areas[i].shape && myimgmap.areas[i].shape != "undefined") {
-        coords = myimgmap.areas[i].lastInput.split(",").join(" ");
+        coords = myimgmap.areas[i].lastInput.split(" ").join(" ");
         html +=
           myimgmap.areas[i].shape +
           " " +
@@ -884,6 +913,54 @@ function output_wiki() {
   return html;
 }
 
+// Add SPIP export function
+function output_spip() {
+  var html = "";
+  var docId = document.getElementById("spip_doc_id").value || "NNN";
+  var useMapHilight = document.getElementById("spip_use_maphilight").checked;
+  var useNolist = document.getElementById("spip_use_nolist").checked;
+
+  html += "<img" + docId + "|cliquable";
+
+  if (useMapHilight) {
+    html += "|maphilight=oui";
+  }
+
+  if (!useNolist) {
+    html += "|nolist=oui";
+  }
+
+  for (var i = 0; i < myimgmap.areas.length; i++) {
+    if (
+      myimgmap.areas[i] &&
+      myimgmap.areas[i].shape &&
+      myimgmap.areas[i].shape != "undefined"
+    ) {
+      var num = i + 1; // Number starting from 1
+      var coords = myimgmap.areas[i].lastInput;
+      var shape = myimgmap.areas[i].shape;
+      var href = myimgmap.areas[i].ahref;
+      // Use alt value if it exists, otherwise use default value
+      var alt =
+        myimgmap.areas[i].aalt && myimgmap.areas[i].aalt.trim()
+          ? myimgmap.areas[i].aalt
+          : "Lien " + num;
+
+      // Convert 'poly' to 'polygon' for SPIP syntax
+      if (shape == "poly") shape = "polygon";
+
+      html += "|coord" + num + "=" + coords;
+      html += "|type" + num + "=" + shape;
+      html += "|lien" + num + "=" + href;
+      html += "|alt" + num + "=" + alt;
+    }
+  }
+
+  html += ">";
+
+  return html;
+}
+
 /** BROWSERPLUS SECTION *******************************************************/
 
 /*
@@ -895,30 +972,30 @@ function bp_init() {
 	BrowserPlus.init(function(res) {
 	  if (res.success) {  
 	   BrowserPlus.require({  
-	      services: [
-		  	{service: 'DragAndDrop'},
-		  	{service: "ImageAlter"}
+		  services: [
+				{service: 'DragAndDrop'},
+				{service: "ImageAlter"}
 			]},  
-	      function(res) {
-	        if (res.success) {
-	          var dnd = BrowserPlus.DragAndDrop;
-	          dnd.AddDropTarget(
-	            {id: "pic_container"},
-	            function(res) {
-	            	document.getElementById("pic_container").innerHTML = '<em>Drag and drop an image here to start editing, or select source above.</em>';
-	              dnd.AttachCallbacks({
-	                id: "pic_container",
-	                drop: bp_dropped
-	              },
-	              function(){});
-	              
-	          });
-	        } else {
-	          //alert("Error Loading Browserplus Services: " + res.error);
-	        }
-	      });
+		  function(res) {
+			if (res.success) {
+			  var dnd = BrowserPlus.DragAndDrop;
+			  dnd.AddDropTarget(
+				{id: "pic_container"},
+				function(res) {
+					document.getElementById("pic_container").innerHTML = '<em>Drag and drop an image here to start editing, or select source above.</em>';
+				  dnd.AttachCallbacks({
+					id: "pic_container",
+					drop: bp_dropped
+				  },
+				  function(){});
+				  
+			  });
+			} else {
+			  //alert("Error Loading Browserplus Services: " + res.error);
+			}
+		  });
 	  } else {
-	    //alert("Failed to initialize BrowserPlus: " + res.error);
+		//alert("Failed to initialize BrowserPlus: " + res.error);
 	  }
 	});
 }

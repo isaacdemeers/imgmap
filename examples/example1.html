@@ -57,7 +57,7 @@
 				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image map areas</a>
 			</legend>
 			<div style="border-bottom: solid 1px #efefef">
-				<div id="button_container">
+				<div id="button_container" style="display: flex; gap: .5rem;">
 					<!-- buttons come here -->
 					<img src="example1_files/add.gif" onclick="myimgmap.addNewArea()" alt="Add new area"
 						title="Add new area" />
@@ -80,7 +80,24 @@
 						<option value='imagemap'>Standard imagemap</option>
 						<option value='css'>CSS imagemap</option>
 						<option value='wiki'>Wiki imagemap</option>
+						<option value="spip">SPIP imagemap</option>
 					</select>
+					<div id="spip_options"
+						style="display: none; display: flex; gap: .2rem;justify-content: center; align-items: center;">
+						<label style="display: none;" for="spip_doc_id">ID of the image: </label>
+						<input style="display: none;" type="text" id="spip_doc_id" size="5">
+						<br>
+						<div style="display: flex; justify-content: center; align-items: center; gap: .5rem;">
+							<div style="display: flex; justify-content: center; align-items: center; gap: .5rem;">
+								<label for="spip_use_maphilight">Enable maphilight</label>
+								<input type="checkbox" id="spip_use_maphilight" checked="checked">
+							</div>
+							<div style="display: flex; justify-content: center; align-items: center; gap: .5rem;">
+								<label for="spip_use_nolist">Enable the links list</label>
+								<input type="checkbox" id="spip_use_nolist" checked="checked">
+							</div>
+						</div>
+					</div>
 					<div>
 						<a class="toggler toggler_off" onclick="gui_toggleMore();return false;">More actions</a>
 						<div id="more_actions" style="display: none; position: absolute;">
